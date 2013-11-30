@@ -8,10 +8,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.xafero.slr.api.IRuntime;
 import com.xafero.slr.util.RuntimeHelper;
 
 public class RuntimeTests {
-	private Runtime rt;
+	private IRuntime rt;
 
 	@Before
 	public void testSetup() {

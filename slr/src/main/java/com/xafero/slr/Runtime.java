@@ -7,10 +7,11 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 
+import com.xafero.slr.api.IRuntime;
 import com.xafero.slr.util.MavenHelper;
 import com.xafero.slr.util.RuntimeHelper;
 
-public class Runtime {
+public class Runtime implements IRuntime {
 	private final RepositorySystem system;
 	private final RepositorySystemSession session;
 	private final RemoteRepository centralRepo;
@@ -23,7 +24,7 @@ public class Runtime {
 
 	private static Runtime instance;
 
-	public static synchronized Runtime getInstance() {
+	public static synchronized IRuntime getInstance() {
 		if (instance == null)
 			instance = new Runtime();
 		return instance;
