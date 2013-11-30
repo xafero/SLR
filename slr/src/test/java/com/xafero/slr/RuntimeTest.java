@@ -11,7 +11,7 @@ import org.junit.Test;
 import com.xafero.slr.api.IRuntime;
 import com.xafero.slr.util.RuntimeHelper;
 
-public class RuntimeTests {
+public class RuntimeTest {
 	private IRuntime rt;
 
 	@Before
