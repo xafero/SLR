@@ -1,0 +1,9 @@
+#!/bin/sh
+echo 1 ::: Getting newest code...
+git pull
+echo 2 ::: Building the code...
+cd slr
+~/Dev/maven3/bin/mvn package
+echo 3 ::: Executing the app...
+cd target
+for f in *.one-jar.jar ; do java -jar "$f" ; done
