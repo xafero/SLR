@@ -7,4 +7,4 @@ It simplifies the execution of code by connecting JSR223 languages with an infra
 CI
 ==
 
-[![Build Status](https://api.travis-ci.org/xafero/slr.png?branch=master)(https://travis-ci.org/xafero/slr)
+[![Build Status](https://travis-ci.org/xafero/SLR.png?branch=master)](https://travis-ci.org/xafero/SLR)
