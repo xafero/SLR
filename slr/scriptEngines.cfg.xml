@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<comment>Java scripting engine factory configuration</comment>
+	<entry key="py">org.python:jython-standalone:LATEST</entry>
+	<entry key="rb">org.jruby:jruby-complete:LATEST</entry>
+	<entry key="gy">org.codehaus.groovy:groovy-jsr223:LATEST</entry>
+	<entry key="clj">org.clojars.ato:clojure-jsr223:LATEST | http://clojars.org/repo</entry>
+</properties>
