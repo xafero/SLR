@@ -2,8 +2,8 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 	<comment>Java scripting engine factory configuration</comment>
-	<entry key="py">org.python:jython-standalone:LATEST</entry>
-	<entry key="rb">org.jruby:jruby-complete:LATEST</entry>
-	<entry key="gy">org.codehaus.groovy:groovy-jsr223:LATEST</entry>
-	<entry key="clj">org.clojars.ato:clojure-jsr223:LATEST | http://clojars.org/repo</entry>
+	<entry key="py">org.python:jython-standalone:2.7-b1</entry>
+	<entry key="rb">org.jruby:jruby-complete:1.7.8</entry>
+	<entry key="groovy">org.codehaus.groovy:groovy-jsr223:2.2.1</entry>
+	<entry key="clj">org.clojars.ato:clojure-jsr223:1.5.1 | http://clojars.org/repo</entry>
 </properties>

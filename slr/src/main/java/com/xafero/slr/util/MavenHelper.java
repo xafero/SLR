@@ -36,11 +36,11 @@ import com.xafero.slr.util.log.LoggingTransferListener;
 public class MavenHelper {
 
 	public static RemoteRepository newCentralRepository() {
-		return newCentralRepository("http://repo1.maven.org/maven2/");
+		return newCentralRepository("central", "http://repo1.maven.org/maven2/");
 	}
 
-	public static RemoteRepository newCentralRepository(String url) {
-		return new RemoteRepository.Builder("central", "default", url).build();
+	public static RemoteRepository newCentralRepository(String id, String url) {
+		return new RemoteRepository.Builder(id, "default", url).build();
 	}
 
 	public static RepositorySystem newSystem() {

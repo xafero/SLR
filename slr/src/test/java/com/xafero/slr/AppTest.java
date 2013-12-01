@@ -1,8 +1,10 @@
 package com.xafero.slr;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
 import org.junit.Before;
@@ -36,5 +38,63 @@ public class AppTest {
 	@Test
 	public void testVersion() throws Exception {
 		testCmd(String.format("%n SLR v"), "-version");
+	}
+
+	@Test(expected = FileNotFoundException.class)
+	public void testConfig() throws Exception {
+		testCmd("?", "-config", "devNull");
+	}
+
+	@Test
+	public void testLangJs() {
+		try {
+			testCmd("", "-language", "js", "-e", "#");
+		} catch (Exception e) {
+			assertEquals("sun.org.mozilla.javascript.EvaluatorException", e
+					.getMessage().split(":")[0]);
+		}
+	}
+
+	@Test
+	public void testLangGroovy() {
+		try {
+			testCmd("", "-language", "groovy", "-e", "#");
+		} catch (Exception e) {
+			assertEquals(
+					"org.codehaus.groovy.control.MultipleCompilationErrorsException",
+					e.getMessage().split(":")[0]);
+		}
+	}
+
+	@Test
+	public void testLangClj() {
+		try {
+			testCmd("", "-language", "clj", "-e", "#");
+		} catch (Exception e) {
+			assertEquals(
+					"java.lang.RuntimeException: EOF while reading character",
+					e.getMessage().split(",")[0]);
+		}
+	}
+
+	@Test
+	public void testLangRb() {
+		try {
+			testCmd("", "-language", "rb", "-e", "oh my gosh");
+		} catch (Exception e) {
+			assertEquals("org.jruby.embed.EvalFailedException", e.getMessage()
+					.split(":")[0]);
+		}
+	}
+
+	@Test
+	public void testLangPy() {
+		try {
+			testCmd("", "-language", "py", "-e", "oh my gosh");
+		} catch (Exception e) {
+			assertEquals(
+					"SyntaxError: no viable alternative at input 'my' in ", e
+							.getMessage().split("<s")[0]);
+		}
 	}
 }
