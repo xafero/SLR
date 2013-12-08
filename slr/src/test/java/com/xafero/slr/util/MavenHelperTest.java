@@ -1,8 +1,10 @@
 package com.xafero.slr.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.aether.RepositorySystem;
@@ -63,5 +65,13 @@ public class MavenHelperTest {
 		assertEquals("[]", deps.getExceptions() + "");
 		assertEquals("[org.hamcrest:hamcrest-core:jar:1.3 (compile)]", deps
 				.getRoot().getChildren() + "");
+	}
+
+	@Test
+	public void testToStringArray() {
+		Version ver = new DummyVersion();
+		List<Version> versions = Arrays.asList(ver);
+		String[] array = MavenHelper.toStringArray(versions);
+		assertArrayEquals(new String[] { ver + "" }, array);
 	}
 }
