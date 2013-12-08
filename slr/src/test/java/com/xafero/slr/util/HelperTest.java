@@ -14,6 +14,7 @@ public class HelperTest {
 	public void testConstructors() {
 		new RuntimeHelper();
 		new IOHelper();
+		new MavenHelper();
 	}
 
 	@Test
