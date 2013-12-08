@@ -87,4 +87,9 @@ public class MavenHelperTest {
 		assertEquals(0, colRes.getDependencies().size());
 		assertEquals(0, colRes.getManagedDependencies().size());
 	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testNewArtifact() {
+		MavenHelper.newArtifact("?");
+	}
 }
