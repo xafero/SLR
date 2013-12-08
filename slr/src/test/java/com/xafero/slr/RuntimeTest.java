@@ -31,4 +31,9 @@ public class RuntimeTest {
 		assertNotNull(instance);
 		assertEquals(className, instance.getClass().getName());
 	}
+
+	@Test(expected = RuntimeException.class)
+	public void testRequireFail() {
+		rt.require("?#");
+	}
 }
