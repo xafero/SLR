@@ -10,6 +10,7 @@ import java.util.List;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -73,5 +74,17 @@ public class MavenHelperTest {
 		List<Version> versions = Arrays.asList(ver);
 		String[] array = MavenHelper.toStringArray(versions);
 		assertArrayEquals(new String[] { ver + "" }, array);
+	}
+
+	@Test
+	public void testCollectRequest() {
+		CollectRequest colRes = MavenHelper.newCollectRequest(artifact, repo);
+		assertEquals(artifact, colRes.getRootArtifact());
+		assertEquals("", colRes.getRequestContext());
+		assertEquals(Arrays.asList(repo), colRes.getRepositories());
+		assertEquals(null, colRes.getRoot());
+		assertEquals(null, colRes.getTrace());
+		assertEquals(0, colRes.getDependencies().size());
+		assertEquals(0, colRes.getManagedDependencies().size());
 	}
 }
