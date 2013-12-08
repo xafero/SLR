@@ -30,6 +30,11 @@ public class AppTest {
 		assertTrue(txt, txt.startsWith(expected));
 	}
 
+	@Test(expected = UnsupportedOperationException.class)
+	public void testMain() throws Exception {
+		App.main(null);
+	}
+
 	@Test
 	public void testHelp() throws Exception {
 		testCmd("usage: slr", "-help");
