@@ -50,8 +50,9 @@ public class AppTest {
 		try {
 			testCmd("", "-language", "js", "-e", "#");
 		} catch (Exception e) {
-			assertEquals("sun.org.mozilla.javascript.EvaluatorException", e
-					.getMessage().split(":")[0]);
+			assertEquals(
+					"sun.org.mozilla.javascript.internal.EvaluatorException", e
+							.getMessage().split(":")[0]);
 		}
 	}
 
