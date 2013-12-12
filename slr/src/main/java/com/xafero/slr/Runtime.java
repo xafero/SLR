@@ -74,9 +74,11 @@ public class Runtime implements IRuntime {
 						continue;
 					String libName = IOHelper.last(entry.getName().split("/"));
 					File libFile = new File(warFolder, libName);
-					InputStream input = war.getInputStream(entry);
-					FileOutputStream output = new FileOutputStream(libFile);
-					IOHelper.copy(input, output);
+					if (!libFile.exists() || !libFile.canRead()) {
+						InputStream input = war.getInputStream(entry);
+						FileOutputStream output = new FileOutputStream(libFile);
+						IOHelper.copy(input, output);
+					}
 					extracted.add(libFile.toURI().toURL());
 				}
 				war.close();
