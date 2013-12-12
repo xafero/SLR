@@ -6,4 +6,5 @@
 	<entry key="rb">org.jruby:jruby-complete:1.7.8</entry>
 	<entry key="groovy">org.codehaus.groovy:groovy-jsr223:2.2.1</entry>
 	<entry key="clj">org.clojars.ato:clojure-jsr223:1.5.1 | http://clojars.org/repo</entry>
+	<entry key="lua">org.luaj:luaj-jse:3.0-beta1</entry>
 </properties>

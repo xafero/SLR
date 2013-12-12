@@ -103,4 +103,14 @@ public class AppTest {
 							.getMessage().split("<s")[0]);
 		}
 	}
+
+	@Test
+	public void testLangLua() {
+		try {
+			testCmd("", "-language", "lua", "-e", "oh my gosh");
+		} catch (Exception e) {
+			assertEquals(" [string \"script\"]:1: syntax error", e.getMessage()
+					.split(":", 2)[1]);
+		}
+	}
 }
