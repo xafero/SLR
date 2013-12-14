@@ -131,4 +131,15 @@ public class AppTest {
 					.getMessage().split(",")[0]);
 		}
 	}
+
+	@Test
+	public void testLangBasic() {
+		try {
+			testCmd("", "-language", "bas", "-e", "oh my gosh");
+			fail("Should not happen!");
+		} catch (Exception e) {
+			assertEquals("The line could not be analyzed null(0):2",
+					e.getMessage());
+		}
+	}
 }

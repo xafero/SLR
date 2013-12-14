@@ -8,4 +8,5 @@
 	<entry key="clj">org.clojars.ato:clojure-jsr223:1.5.1 | http://clojars.org/repo</entry>
 	<entry key="lua">org.luaj:luaj-jse:3.0-beta1</entry>	
 	<entry key="php">http://caucho.com/download/quercus-4.0.37.war</entry>
+	<entry key="bas">com.scriptbasic:jscriptbasic:1.0.4</entry>
 </properties>
