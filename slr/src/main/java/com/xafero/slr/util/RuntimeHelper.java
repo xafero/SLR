@@ -36,8 +36,14 @@ public class RuntimeHelper {
 			Class<?>... args) {
 		try {
 			return owner.getDeclaredMethod(name, args);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		} catch (NoSuchMethodException nsme) {
+			try {
+				return owner.getMethod(name, args);
+			} catch (Exception e) {
+				throw new RuntimeException("getMethod", e);
+			}
+		} catch (SecurityException se) {
+			throw new RuntimeException("getDeclaredMethod", se);
 		}
 	}
 
