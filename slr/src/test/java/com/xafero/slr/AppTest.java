@@ -54,6 +54,15 @@ public class AppTest {
 	}
 
 	@Test
+	public void testExecuteLine() throws Exception {
+		// Set the text which is tested
+		String txt = (new Date()) + "";
+		String line = "print('" + txt + "')";
+		// Execute and check result
+		testCmd(txt, "-language", "js", "-e", line);
+	}
+
+	@Test
 	public void testExecuteFile() throws Exception {
 		// Create a new temporary file
 		File tf = new File("tmpTest.js");
