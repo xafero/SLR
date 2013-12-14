@@ -28,6 +28,11 @@ public class HelperTest {
 	}
 
 	@Test(expected = RuntimeException.class)
+	public void testGetMethodNonPublic() {
+		RuntimeHelper.getMethod(String.class, "iDontKnowYou");
+	}
+
+	@Test(expected = RuntimeException.class)
 	public void testInvoke() {
 		RuntimeHelper.invoke(null, null);
 	}
