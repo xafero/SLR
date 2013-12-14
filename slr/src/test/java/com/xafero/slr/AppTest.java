@@ -5,8 +5,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.Date;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +51,18 @@ public class AppTest {
 	@Test(expected = FileNotFoundException.class)
 	public void testConfig() throws Exception {
 		testCmd("?", "-config", "devNull");
+	}
+
+	@Test
+	public void testExecuteFile() throws Exception {
+		// Create a new temporary file
+		File tf = new File("tmpTest.js");
+		tf.deleteOnExit();
+		// Set the text which is tested
+		String txt = (new Date()) + "";
+		IOHelper.writeAllText(tf, "print('" + txt + "')");
+		// Execute and check result
+		testCmd(txt, "-run", tf.getAbsolutePath());
 	}
 
 	@Test
