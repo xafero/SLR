@@ -1,8 +1,10 @@
 package com.xafero.slr.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -23,13 +25,30 @@ public class HelperTest {
 	}
 
 	@Test(expected = RuntimeException.class)
-	public void testGetMethod() {
+	public void testGetMethodFail() {
 		RuntimeHelper.getMethod(null, null);
 	}
 
+	@Test
+	public void testGetMethodOk() {
+		Method tm = RuntimeHelper.getMethod(String.class, "trim");
+		assertNotNull(tm);
+		assertEquals("java.lang.String.trim()",
+				IOHelper.last(tm.toString().split(" ")));
+	}
+
 	@Test(expected = RuntimeException.class)
-	public void testGetMethodNonPublic() {
+	public void testGetMethodNonPublicFail() {
 		RuntimeHelper.getMethod(String.class, "iDontKnowYou");
+	}
+
+	@Test
+	public void testGetMethodNonPublicOk() {
+		Method tm = RuntimeHelper.getMethod(String.class,
+				"indexOfSupplementary", int.class, int.class);
+		assertNotNull(tm);
+		assertEquals("indexOfSupplementary(int,int)",
+				IOHelper.last(tm.toString().split("\\.")));
 	}
 
 	@Test(expected = RuntimeException.class)
