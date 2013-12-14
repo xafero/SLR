@@ -53,6 +53,11 @@ public class AppTest {
 		testCmd("?", "-config", "devNull");
 	}
 
+	@Test(expected = UnsupportedOperationException.class)
+	public void testLanguageFail() throws Exception {
+		testCmd("?", "-language", "iDontKnow");
+	}
+
 	@Test
 	public void testExecuteLine() throws Exception {
 		// Set the text which is tested
