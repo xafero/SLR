@@ -1,9 +1,12 @@
 package com.xafero.slr.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 
@@ -28,7 +31,7 @@ public class IOHelper {
 		return parts[parts.length - 1];
 	}
 
-	public static void copy(InputStream input, FileOutputStream output)
+	public static void copy(InputStream input, OutputStream output)
 			throws IOException {
 		byte[] buffer = new byte[16 * 1024];
 		int readBytes;
@@ -37,5 +40,19 @@ public class IOHelper {
 		output.flush();
 		output.close();
 		input.close();
+	}
+
+	public static void writeAllText(File file, CharSequence text) {
+		try {
+			FileOutputStream fo = new FileOutputStream(file);
+			OutputStreamWriter osw = new OutputStreamWriter(fo, "UTF8");
+			osw.write(text.toString());
+			osw.flush();
+			fo.flush();
+			osw.close();
+			fo.close();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
