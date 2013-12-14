@@ -1,9 +1,13 @@
 package com.xafero.slr.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -69,5 +73,19 @@ public class HelperTest {
 	public void testGetUTF8Str() {
 		ByteArrayOutputStream fake = new DummyStream();
 		IOHelper.getUTF8Str(fake);
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testWriteTextFile() {
+		IOHelper.writeAllText(null, null);
+	}
+
+	@Test
+	public void testCopy() throws IOException {
+		byte[] data = new byte[] { 1, 2, 3, 6, 7, 8 };
+		InputStream input = new ByteArrayInputStream(data);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		IOHelper.copy(input, output);
+		assertArrayEquals(data, output.toByteArray());
 	}
 }
