@@ -1,5 +1,6 @@
 package com.xafero.slr;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -7,15 +8,18 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.PrintStream;
 import java.util.Date;
 
 import org.junit.Before;
+import org.junit.ComparisonFailure;
 import org.junit.Test;
 
 import com.xafero.slr.util.IOHelper;
 
 public class AppTest {
+	private static final Object sync = new Object();
 	private App app;
 
 	@Before
@@ -30,7 +34,19 @@ public class AppTest {
 		System.setOut(orig);
 		String txt = IOHelper.getUTF8Str(bo);
 		System.out.println(txt);
-		assertTrue(txt, txt.startsWith(expected));
+		assertTrue(getMessageOfEquals(expected, txt), txt.startsWith(expected));
+	}
+
+	private static String getMessageOfEquals(String expected, String actual) {
+		expected = escape(escape(expected));
+		actual = escape(escape(actual));
+		ComparisonFailure cf = new ComparisonFailure(null, expected, actual);
+		return cf.getMessage().replace("but was",
+				String.format("%n%s", "but was"));
+	}
+
+	private static String escape(String text) {
+		return text.replace('\n', 'N').replace('\r', 'R');
 	}
 
 	@Test(expected = UnsupportedOperationException.class)
@@ -60,23 +76,61 @@ public class AppTest {
 
 	@Test
 	public void testExecuteLine() throws Exception {
-		// Set the text which is tested
-		String txt = (new Date()) + "";
-		String line = "print('" + txt + "')";
-		// Execute and check result
-		testCmd(txt, "-language", "js", "-e", line);
+		synchronized (sync) {
+			// Set the text which is tested
+			String txt = (new Date()) + "";
+			String line = "print('" + txt + "')";
+			// Execute and check result
+			testCmd(txt, "-language", "js", "-e", line);
+		}
 	}
 
 	@Test
 	public void testExecuteFile() throws Exception {
-		// Create a new temporary file
-		File tf = new File("tmpTest.js");
-		tf.deleteOnExit();
-		// Set the text which is tested
-		String txt = (new Date()) + "";
-		IOHelper.writeAllText(tf, "print('" + txt + "')");
-		// Execute and check result
-		testCmd(txt, "-run", tf.getAbsolutePath());
+		synchronized (sync) {
+			// Create a new temporary file
+			File tf = new File("tmpTest.js");
+			tf.deleteOnExit();
+			// Set the text which is tested
+			String txt = (new Date()) + "";
+			IOHelper.writeAllText(tf, "print('" + txt + "')");
+			// Execute and check result
+			testCmd(txt, "-run", tf.getAbsolutePath());
+			// Delete manually
+			tf.delete();
+		}
+	}
+
+	@Test
+	public void testExecuteDir() throws Exception {
+		synchronized (sync) {
+			(new File("tmpTest.js")).delete();
+			// Create first temporary file
+			File tfA = new File("tmpTestA-dir.js");
+			tfA.deleteOnExit();
+			// Set the first text which is tested
+			String txtA = (new Date()) + " | A";
+			IOHelper.writeAllText(tfA, "print('" + txtA + " \\n')");
+			// Create second temporary file
+			File tfB = new File("tmpTestB-dir.js");
+			tfB.deleteOnExit();
+			// Set the second text which is tested
+			String txtB = (new Date()) + " | B";
+			IOHelper.writeAllText(tfB, "print('" + txtB + " \\n')");
+			// Get current directory
+			File root = IOHelper.currentDir();
+			// Check if files are there
+			FilenameFilter filter = IOHelper.filterBySuffix("-dir.js");
+			assertArrayEquals(
+					new File[] { tfA.getAbsoluteFile(), tfB.getAbsoluteFile() },
+					root.listFiles(filter));
+			// Execute and check result
+			String txt = String.format("%s \n%s \n", txtA, txtB);
+			testCmd(txt, "-runAll", root.getAbsolutePath());
+			// Delete manually
+			tfA.delete();
+			tfB.delete();
+		}
 	}
 
 	@Test
