@@ -9,8 +9,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.junit.Before;
 import org.junit.ComparisonFailure;
@@ -96,6 +102,39 @@ public class AppTest {
 			IOHelper.writeAllText(tf, "print('" + txt + "')");
 			// Execute and check result
 			testCmd(txt, "-run", tf.getAbsolutePath());
+			// Delete manually
+			tf.delete();
+		}
+	}
+
+	@Test
+	public void testWatchFile() throws Exception {
+		synchronized (sync) {
+			// Create a new temporary file
+			File tf = new File("tmpTest.js");
+			tf.deleteOnExit();
+			// Set the text which is tested
+			String txt = (new Date()) + "";
+			IOHelper.writeAllText(tf, "print('" + txt + "')");
+			// Setup input
+			final PipedOutputStream po = new PipedOutputStream();
+			InputStream oldIn = System.in;
+			System.setIn(new PipedInputStream(po));
+			// Execute and check result
+			Timer t = new Timer(true);
+			t.schedule(new TimerTask() {
+				public void run() {
+					try {
+						po.write(13);
+						po.flush();
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			}, 200);
+			testCmd(txt, "-run", tf.getAbsolutePath(), "-watchInterval", "50");
+			// Set back input
+			System.setIn(oldIn);
 			// Delete manually
 			tf.delete();
 		}
