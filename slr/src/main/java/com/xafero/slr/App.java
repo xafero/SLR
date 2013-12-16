@@ -2,12 +2,15 @@ package com.xafero.slr;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -45,6 +48,9 @@ public class App {
 		options.addOption(OptionBuilder.withLongOpt("run")
 				.withDescription("run one script file").hasArg()
 				.withArgName("file").create("f"));
+		options.addOption(OptionBuilder.withLongOpt("runAll")
+				.withDescription("run all scripts found").hasArg()
+				.withArgName("dir").create("d"));
 		// Parse the textual input
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -88,17 +94,37 @@ public class App {
 		// Check if file's execution is wanted
 		if (cmd.hasOption("f")) {
 			String path = cmd.getOptionValue("f");
-			File file = new File(path);
-			if (engine == null) {
-				String lang = IOHelper.last(file.getName().split("\\."));
-				engine = getEngine(lang, defCfg, usrCfg);
-			}
-			engine.eval(new FileReader(file));
+			executeFile(new AtomicReference<ScriptEngine>(engine), new File(
+					path), defCfg, usrCfg);
+			return;
+		}
+		// Check if directory's execution is wanted
+		if (cmd.hasOption("d")) {
+			String path = cmd.getOptionValue("d");
+			File dir = new File(path);
+			@SuppressWarnings("unused")
+			AtomicReference<ScriptEngine> engineRef;
+			for (File file : dir.listFiles())
+				try {
+					executeFile(engineRef = new AtomicReference<ScriptEngine>(
+							engine), file, defCfg, usrCfg);
+				} catch (UnsupportedOperationException uoe) {
+				}
 			return;
 		}
 		// Just panic here
 		throw new UnsupportedOperationException("Can't handle '"
 				+ Arrays.toString(args) + "'!");
+	}
+
+	private void executeFile(AtomicReference<ScriptEngine> engine, File file,
+			Properties defCfg, Properties usrCfg) throws FileNotFoundException,
+			ScriptException {
+		if (engine.get() == null) {
+			String lang = IOHelper.last(file.getName().split("\\."));
+			engine.set(getEngine(lang, defCfg, usrCfg));
+		}
+		engine.get().eval(new FileReader(file));
 	}
 
 	private ScriptEngine getEngine(String lang, Properties defCfg,
