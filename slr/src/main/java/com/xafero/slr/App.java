@@ -20,6 +20,9 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
 import com.xafero.slr.api.IRuntime;
+import com.xafero.slr.util.FolderWatcher;
+import com.xafero.slr.util.FolderWatcher.FileChange;
+import com.xafero.slr.util.FolderWatcher.FileListener;
 import com.xafero.slr.util.IOHelper;
 
 public class App {
@@ -51,6 +54,9 @@ public class App {
 		options.addOption(OptionBuilder.withLongOpt("runAll")
 				.withDescription("run all scripts found").hasArg()
 				.withArgName("dir").create("d"));
+		options.addOption(OptionBuilder.withLongOpt("watchInterval")
+				.withDescription("watch for file changes").hasArg()
+				.withArgName("ms").create("w"));
 		// Parse the textual input
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -91,24 +97,46 @@ public class App {
 			engine.eval(line);
 			return;
 		}
-		// Check if file's execution is wanted
-		if (cmd.hasOption("f")) {
-			String path = cmd.getOptionValue("f");
-			executeFile(new AtomicReference<ScriptEngine>(engine), new File(
-					path), defCfg, usrCfg);
-			return;
-		}
+		// Common stuff for files and folders
+		File[] files = null;
+		File file = null;
+		File dir = null;
 		// Check if directory's execution is wanted
 		if (cmd.hasOption("d")) {
 			String path = cmd.getOptionValue("d");
-			File dir = new File(path);
-			@SuppressWarnings("unused")
-			AtomicReference<ScriptEngine> engineRef;
-			for (File file : dir.listFiles())
+			dir = new File(path);
+			files = dir.listFiles();
+		}
+		// Check if file's execution is wanted
+		if (cmd.hasOption("f")) {
+			String path = cmd.getOptionValue("f");
+			file = new File(path);
+			files = new File[] { file };
+			dir = file.getParentFile();
+		}
+		// Check if file changes should be observed
+		if (cmd.hasOption("w")) {
+			int ms = Integer.parseInt(cmd.getOptionValue("w"));
+			boolean throwError = file != null;
+			String singleFile = file == null ? null : file.getAbsolutePath();
+			FileListener listener = createListener(throwError, defCfg, usrCfg,
+					singleFile);
+			FolderWatcher watcher = new FolderWatcher(dir, ms, listener);
+			System.in.read();
+			watcher.close();
+			return;
+		}
+		// Execute scripts
+		if (files != null) {
+			AtomicReference<ScriptEngine> engineRef = new AtomicReference<ScriptEngine>(
+					engine);
+			for (File oneFile : files)
 				try {
-					executeFile(engineRef = new AtomicReference<ScriptEngine>(
-							engine), file, defCfg, usrCfg);
+					executeFile(engineRef, oneFile, defCfg, usrCfg);
 				} catch (UnsupportedOperationException uoe) {
+					// Ignore more than one error, 'cause it'll be a directory
+					if (files.length == 1)
+						throw uoe;
 				}
 			return;
 		}
@@ -142,5 +170,32 @@ public class App {
 			throw new UnsupportedOperationException(
 					"Couldn't find an engine for '" + lang + "'!");
 		return engine;
+	}
+
+	private FileListener createListener(final boolean throwError,
+			final Properties defCfg, final Properties usrCfg,
+			final String singleFile) {
+		return new FileListener() {
+			private final AtomicReference<ScriptEngine> engineRef = new AtomicReference<ScriptEngine>();
+
+			public void fileChanged(FolderWatcher watcher, FileChange event) {
+				try {
+					File file = new File(event.Key);
+					if (singleFile != null
+							&& !singleFile.equalsIgnoreCase(file
+									.getAbsolutePath()))
+						return;
+					executeFile(engineRef, file, defCfg, usrCfg);
+				} catch (RuntimeException re) {
+					if (!throwError)
+						return;
+					throw re;
+				} catch (Exception e) {
+					if (!throwError)
+						return;
+					throw new RuntimeException(e);
+				}
+			}
+		};
 	}
 }
