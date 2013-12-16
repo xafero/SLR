@@ -38,8 +38,8 @@ public class AppTest {
 	}
 
 	private static String getMessageOfEquals(String expected, String actual) {
-		expected = escape(escape(expected));
-		actual = escape(escape(actual));
+		expected = escape(expected);
+		actual = escape(actual);
 		ComparisonFailure cf = new ComparisonFailure(null, expected, actual);
 		return cf.getMessage().replace("but was",
 				String.format("%n%s", "but was"));
