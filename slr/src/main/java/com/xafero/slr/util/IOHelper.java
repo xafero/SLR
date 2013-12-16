@@ -3,6 +3,7 @@ package com.xafero.slr.util;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,5 +55,25 @@ public class IOHelper {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static File currentDir() {
+		try {
+			File dir = new File(".");
+			dir = dir.getAbsoluteFile();
+			dir = dir.getParentFile();
+			dir = dir.getCanonicalFile();
+			return dir;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static FilenameFilter filterBySuffix(final String suffix) {
+		return new FilenameFilter() {
+			public boolean accept(File dir, String name) {
+				return name.endsWith(suffix);
+			}
+		};
 	}
 }
