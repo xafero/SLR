@@ -42,8 +42,6 @@ public class RuntimeHelper {
 			} catch (Exception e) {
 				throw new RuntimeException("getMethod", e);
 			}
-		} catch (SecurityException se) {
-			throw new RuntimeException("getDeclaredMethod", se);
 		}
 	}
 

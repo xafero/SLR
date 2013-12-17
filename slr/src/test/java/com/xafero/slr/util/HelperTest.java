@@ -55,6 +55,13 @@ public class HelperTest {
 				IOHelper.last(tm.toString().split("\\.")));
 	}
 
+	@Test
+	public void testGetMethodInherited() {
+		Method tm = RuntimeHelper.getMethod(URLClassLoader.class, "getParent");
+		assertNotNull(tm);
+		assertEquals("getParent()", IOHelper.last(tm.toString().split("\\.")));
+	}
+
 	@Test(expected = RuntimeException.class)
 	public void testInvoke() {
 		RuntimeHelper.invoke(null, null);
