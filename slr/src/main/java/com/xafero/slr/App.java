@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -120,7 +119,7 @@ public class App {
 			boolean throwError = file != null;
 			String singleFile = file == null ? null : file.getAbsolutePath();
 			FileListener listener = createListener(throwError, defCfg, usrCfg,
-					singleFile);
+					singleFile, engine);
 			FolderWatcher watcher = new FolderWatcher(dir, ms, listener);
 			System.in.read();
 			watcher.close();
@@ -128,11 +127,9 @@ public class App {
 		}
 		// Execute scripts
 		if (files != null) {
-			AtomicReference<ScriptEngine> engineRef = new AtomicReference<ScriptEngine>(
-					engine);
 			for (File oneFile : files)
 				try {
-					executeFile(engineRef, oneFile, defCfg, usrCfg);
+					executeFile(engine, oneFile, defCfg, usrCfg);
 				} catch (UnsupportedOperationException uoe) {
 					// Ignore more than one error, 'cause it'll be a directory
 					if (files.length == 1)
@@ -145,14 +142,13 @@ public class App {
 				+ Arrays.toString(args) + "'!");
 	}
 
-	private void executeFile(AtomicReference<ScriptEngine> engine, File file,
-			Properties defCfg, Properties usrCfg) throws FileNotFoundException,
-			ScriptException {
-		if (engine.get() == null) {
+	private void executeFile(ScriptEngine engine, File file, Properties defCfg,
+			Properties usrCfg) throws FileNotFoundException, ScriptException {
+		if (engine == null) {
 			String lang = IOHelper.last(file.getName().split("\\."));
-			engine.set(getEngine(lang, defCfg, usrCfg));
+			engine = getEngine(lang, defCfg, usrCfg);
 		}
-		engine.get().eval(new FileReader(file));
+		engine.eval(new FileReader(file));
 	}
 
 	private ScriptEngine getEngine(String lang, Properties defCfg,
@@ -174,10 +170,8 @@ public class App {
 
 	private FileListener createListener(final boolean throwError,
 			final Properties defCfg, final Properties usrCfg,
-			final String singleFile) {
+			final String singleFile, final ScriptEngine engine) {
 		return new FileListener() {
-			private final AtomicReference<ScriptEngine> engineRef = new AtomicReference<ScriptEngine>();
-
 			public void fileChanged(FolderWatcher watcher, FileChange event) {
 				try {
 					File file = new File(event.Key);
@@ -185,7 +179,7 @@ public class App {
 							&& !singleFile.equalsIgnoreCase(file
 									.getAbsolutePath()))
 						return;
-					executeFile(engineRef, file, defCfg, usrCfg);
+					executeFile(engine, file, defCfg, usrCfg);
 				} catch (RuntimeException re) {
 					if (!throwError)
 						return;
