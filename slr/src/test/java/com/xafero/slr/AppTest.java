@@ -116,27 +116,58 @@ public class AppTest {
 			// Set the text which is tested
 			String txt = (new Date()) + "";
 			IOHelper.writeAllText(tf, "print('" + txt + "')");
-			// Setup input
-			final PipedOutputStream po = new PipedOutputStream();
-			InputStream oldIn = System.in;
-			System.setIn(new PipedInputStream(po));
-			// Execute and check result
-			Timer t = new Timer(true);
-			t.schedule(new TimerTask() {
-				public void run() {
-					try {
-						po.write(13);
-						po.flush();
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			}, 200);
-			testCmd(txt, "-run", tf.getAbsolutePath(), "-watchInterval", "50");
-			// Set back input
-			System.setIn(oldIn);
+			// Test it
+			testWatch(txt, tf, "-run", 200);
 			// Delete manually
 			tf.delete();
+		}
+	}
+
+	private void testWatch(String txt, File file, String cmd, int ms)
+			throws Exception {
+		// Setup input
+		final PipedOutputStream po = new PipedOutputStream();
+		InputStream oldIn = System.in;
+		System.setIn(new PipedInputStream(po));
+		// Execute and check result
+		Timer t = new Timer(true);
+		t.schedule(new TimerTask() {
+			public void run() {
+				try {
+					po.write(13);
+					po.flush();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}, ms);
+		testCmd(txt, cmd, file.getAbsolutePath(), "-watchInterval", 50 + "");
+		// Set back input
+		System.setIn(oldIn);
+	}
+
+	@Test
+	public void testWatchDir() throws Exception {
+		synchronized (sync) {
+			// Create a new temporary file
+			File tfA = new File("tmpTestA-dir.js");
+			tfA.deleteOnExit();
+			// Set the first text which is tested
+			String txtA = (new Date()) + " | A ";
+			IOHelper.writeAllText(tfA, "print('" + txtA + "')");
+			// Create a new temporary file
+			File tfB = new File("tmpTestB-dir.js");
+			tfB.deleteOnExit();
+			// Set the second text which is tested
+			String txtB = (new Date()) + " | B ";
+			IOHelper.writeAllText(tfB, "print('" + txtB + "')");
+			// Test it
+			String txt = String.format("%s%s", txtA, txtB);
+			File dir = tfA.getAbsoluteFile().getParentFile();
+			testWatch(txt, dir, "-runAll", 300);
+			// Delete manually
+			tfA.delete();
+			tfB.delete();
 		}
 	}
 
