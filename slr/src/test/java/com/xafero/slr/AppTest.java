@@ -25,15 +25,17 @@ import org.junit.Test;
 import com.xafero.slr.util.IOHelper;
 
 public class AppTest {
-	private static final Object sync = new Object();
+	private static final File tmpRoot = new File("target/test-tmp");
 	private App app;
 
 	@Before
 	public void testSetup() {
+		tmpRoot.mkdirs();
 		app = new App();
 	}
 
-	private void testCmd(String expected, String... args) throws Exception {
+	private synchronized void testCmd(String expected, String... args)
+			throws Exception {
 		PrintStream orig = System.out;
 		ByteArrayOutputStream bo = IOHelper.newSystemOut();
 		app.run(args);
@@ -82,45 +84,45 @@ public class AppTest {
 
 	@Test
 	public void testExecuteLine() throws Exception {
-		synchronized (sync) {
-			// Set the text which is tested
-			String txt = (new Date()) + "";
-			String line = "print('" + txt + "')";
-			// Execute and check result
-			testCmd(txt, "-language", "js", "-e", line);
-		}
+		// Set the text which is tested
+		String txt = (new Date()) + "";
+		String line = "print('" + txt + "')";
+		// Execute and check result
+		testCmd(txt, "-language", "js", "-e", line);
 	}
 
 	@Test
 	public void testExecuteFile() throws Exception {
-		synchronized (sync) {
-			// Create a new temporary file
-			File tf = new File("tmpTest.js");
-			tf.deleteOnExit();
-			// Set the text which is tested
-			String txt = (new Date()) + "";
-			IOHelper.writeAllText(tf, "print('" + txt + "')");
-			// Execute and check result
-			testCmd(txt, "-run", tf.getAbsolutePath());
-			// Delete manually
-			tf.delete();
-		}
+		// Create a new temporary file
+		File sf = new File(tmpRoot, "t1");
+		sf.mkdirs();
+		File tf = new File(sf, "tmpTest.js");
+		tf.deleteOnExit();
+		// Set the text which is tested
+		String txt = (new Date()) + "";
+		IOHelper.writeAllText(tf, "print('" + txt + "')");
+		// Execute and check result
+		testCmd(txt, "-run", tf.getAbsolutePath());
+		// Delete manually
+		tf.delete();
+		sf.delete();
 	}
 
 	@Test
 	public void testWatchFile() throws Exception {
-		synchronized (sync) {
-			// Create a new temporary file
-			File tf = new File("tmpTest.js");
-			tf.deleteOnExit();
-			// Set the text which is tested
-			String txt = (new Date()) + "";
-			IOHelper.writeAllText(tf, "print('" + txt + "')");
-			// Test it
-			testWatch(txt, tf, "-run", 200);
-			// Delete manually
-			tf.delete();
-		}
+		// Create a new temporary file
+		File sf = new File(tmpRoot, "t2");
+		sf.mkdirs();
+		File tf = new File(sf, "tmpTest.js");
+		tf.deleteOnExit();
+		// Set the text which is tested
+		String txt = (new Date()) + "";
+		IOHelper.writeAllText(tf, "print('" + txt + "')");
+		// Test it
+		testWatch(txt, tf, "-run", 200);
+		// Delete manually
+		tf.delete();
+		sf.delete();
 	}
 
 	private void testWatch(String txt, File file, String cmd, int ms)
@@ -148,59 +150,60 @@ public class AppTest {
 
 	@Test
 	public void testWatchDir() throws Exception {
-		synchronized (sync) {
-			// Create a new temporary file
-			File tfA = new File("tmpTestA-dir.js");
-			tfA.deleteOnExit();
-			// Set the first text which is tested
-			String txtA = (new Date()) + " | A ";
-			IOHelper.writeAllText(tfA, "print('" + txtA + "')");
-			// Create a new temporary file
-			File tfB = new File("tmpTestB-dir.js");
-			tfB.deleteOnExit();
-			// Set the second text which is tested
-			String txtB = (new Date()) + " | B ";
-			IOHelper.writeAllText(tfB, "print('" + txtB + "')");
-			// Test it
-			String txt = String.format("%s%s", txtA, txtB);
-			File dir = tfA.getAbsoluteFile().getParentFile();
-			testWatch(txt, dir, "-runAll", 300);
-			// Delete manually
-			tfA.delete();
-			tfB.delete();
-		}
+		File sf = new File(tmpRoot, "t3");
+		sf.mkdirs();
+		// Create a new temporary file
+		File tfA = new File(sf, "tmpTestA-dir.js");
+		tfA.deleteOnExit();
+		// Set the first text which is tested
+		String txtA = (new Date()) + " | A ";
+		IOHelper.writeAllText(tfA, "print('" + txtA + "')");
+		// Create a new temporary file
+		File tfB = new File(sf, "tmpTestB-dir.js");
+		tfB.deleteOnExit();
+		// Set the second text which is tested
+		String txtB = (new Date()) + " | B ";
+		IOHelper.writeAllText(tfB, "print('" + txtB + "')");
+		// Test it
+		String txt = String.format("%s%s", txtA, txtB);
+		File dir = tfA.getAbsoluteFile().getParentFile();
+		testWatch(txt, dir, "-runAll", 300);
+		// Delete manually
+		tfA.delete();
+		tfB.delete();
+		sf.delete();
 	}
 
 	@Test
 	public void testExecuteDir() throws Exception {
-		synchronized (sync) {
-			(new File("tmpTest.js")).delete();
-			// Create first temporary file
-			File tfA = new File("tmpTestA-dir.js");
-			tfA.deleteOnExit();
-			// Set the first text which is tested
-			String txtA = (new Date()) + " | A";
-			IOHelper.writeAllText(tfA, "print('" + txtA + " \\n')");
-			// Create second temporary file
-			File tfB = new File("tmpTestB-dir.js");
-			tfB.deleteOnExit();
-			// Set the second text which is tested
-			String txtB = (new Date()) + " | B";
-			IOHelper.writeAllText(tfB, "print('" + txtB + " \\n')");
-			// Get current directory
-			File root = IOHelper.currentDir();
-			// Check if files are there
-			FilenameFilter filter = IOHelper.filterBySuffix("-dir.js");
-			assertArrayEquals(
-					new File[] { tfA.getAbsoluteFile(), tfB.getAbsoluteFile() },
-					root.listFiles(filter));
-			// Execute and check result
-			String txt = String.format("%s \n%s \n", txtA, txtB);
-			testCmd(txt, "-runAll", root.getAbsolutePath());
-			// Delete manually
-			tfA.delete();
-			tfB.delete();
-		}
+		File sf = new File(tmpRoot, "t4");
+		sf.mkdirs();
+		// Create first temporary file
+		File tfA = new File(sf, "tmpTestA-dir.js");
+		tfA.deleteOnExit();
+		// Set the first text which is tested
+		String txtA = (new Date()) + " | A";
+		IOHelper.writeAllText(tfA, "print('" + txtA + " \\n')");
+		// Create second temporary file
+		File tfB = new File(sf, "tmpTestB-dir.js");
+		tfB.deleteOnExit();
+		// Set the second text which is tested
+		String txtB = (new Date()) + " | B";
+		IOHelper.writeAllText(tfB, "print('" + txtB + " \\n')");
+		// Get current directory
+		File root = tfA.getAbsoluteFile().getParentFile();
+		// Check if files are there
+		FilenameFilter filter = IOHelper.filterBySuffix("-dir.js");
+		assertArrayEquals(
+				new File[] { tfA.getAbsoluteFile(), tfB.getAbsoluteFile() },
+				root.listFiles(filter));
+		// Execute and check result
+		String txt = String.format("%s \n%s \n", txtA, txtB);
+		testCmd(txt, "-runAll", root.getAbsolutePath());
+		// Delete manually
+		tfA.delete();
+		tfB.delete();
+		sf.delete();
 	}
 
 	@Test
