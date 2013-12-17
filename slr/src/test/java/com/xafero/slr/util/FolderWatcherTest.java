@@ -42,7 +42,7 @@ public class FolderWatcherTest {
 		wRef.set(w);
 		tf.createNewFile();
 		tf.deleteOnExit();
-		Thread.sleep(21);
+		Thread.sleep(31);
 		assertTrue("Watcher was not called!", ab.get());
 		tf.delete();
 	}
