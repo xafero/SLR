@@ -17,6 +17,7 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 
+import com.xafero.slr.api.ILogger;
 import com.xafero.slr.api.IRuntime;
 import com.xafero.slr.util.IOHelper;
 import com.xafero.slr.util.MavenHelper;
@@ -27,6 +28,8 @@ public class Runtime implements IRuntime {
 	private final RepositorySystem system;
 	private final RepositorySystemSession session;
 	private final RemoteRepository centralRepo;
+
+	private ILogger logger;
 
 	private Runtime() {
 		system = MavenHelper.newSystem();
@@ -43,6 +46,7 @@ public class Runtime implements IRuntime {
 	}
 
 	public int require(String args) {
+		logger.info("Requiring '%s'...", args);
 		try {
 			// Convert arguments to URL
 			URL url = new URL(args);
@@ -58,8 +62,12 @@ public class Runtime implements IRuntime {
 				IOHelper.copy(input, output);
 			}
 			// If it's a JAR, just put it on class path
-			if (file.getName().endsWith(".jar"))
-				return RuntimeHelper.extendClassPath(file.toURI().toURL());
+			if (file.getName().endsWith(".jar")) {
+				int result = RuntimeHelper
+						.extendClassPath(file.toURI().toURL());
+				logger.info("Added %s URL for '%s'.", result, file);
+				return result;
+			}
 			// Extract WAR file
 			if (file.getName().endsWith(".war")) {
 				File warFolder = new File(folder, file.getName().replace(
@@ -84,13 +92,17 @@ public class Runtime implements IRuntime {
 				war.close();
 				// Add all extracted JARs to class path
 				URL[] urls = extracted.toArray(new URL[extracted.size()]);
-				return RuntimeHelper.extendClassPath(urls);
+				int result = RuntimeHelper.extendClassPath(urls);
+				logger.info("Added %s URL(s) for '%s'.", result, file);
+				return result;
 			}
 			// Just panic if not known!
 			throw new IOException("Unknown file '" + file + "'!");
 		} catch (MalformedURLException e) {
 			// If not an URL, it should be an artifact
-			return requireMaven(args);
+			int result = requireMaven(args);
+			logger.info("Added %s URL(s) for '%s'.", result, args);
+			return result;
 		} catch (IOException e) {
 			throw new RuntimeException("require", e);
 		}
@@ -117,5 +129,14 @@ public class Runtime implements IRuntime {
 		} catch (Exception e) {
 			throw new RuntimeException("require", e);
 		}
+	}
+
+	public ILogger getLogger() {
+		return logger;
+	}
+
+	@Override
+	public void setLogger(ILogger logger) {
+		this.logger = logger;
 	}
 }

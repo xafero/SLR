@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
@@ -18,7 +19,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
+import com.xafero.slr.api.ILogger;
 import com.xafero.slr.api.IRuntime;
+import com.xafero.slr.impl.ConsoleLogger;
+import com.xafero.slr.impl.NullLogger;
 import com.xafero.slr.util.FolderWatcher;
 import com.xafero.slr.util.FolderWatcher.FileChange;
 import com.xafero.slr.util.FolderWatcher.FileListener;
@@ -31,6 +35,9 @@ public class App {
 		App app = new App();
 		app.run(args);
 	}
+
+	private ILogger log;
+	private boolean ignoreError;
 
 	public void run(String... args) throws Exception {
 		// Create options
@@ -56,6 +63,10 @@ public class App {
 		options.addOption(OptionBuilder.withLongOpt("watchInterval")
 				.withDescription("watch for file changes").hasArg()
 				.withArgName("ms").create("w"));
+		options.addOption(OptionBuilder.withLongOpt("verbose")
+				.withDescription("set the output to verbose").create());
+		options.addOption(OptionBuilder.withLongOpt("ignore")
+				.withDescription("errors will be ignored").create());
 		// Parse the textual input
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -68,16 +79,24 @@ public class App {
 		// Check for version switch
 		if (cmd.hasOption("v")) {
 			System.out.println();
-			System.out.println(" SLR v.0.0.1 alpha");
+			System.out.println(" SLR v.0.0.2 alpha");
 			System.out.println(" Copyright (C) 2013 by Xafero Inc.");
 			System.out.println();
 			return;
 		}
+		// Check for logging options
+		if (cmd.hasOption("verbose"))
+			log = new ConsoleLogger();
+		else
+			log = new NullLogger();
+		ignoreError = cmd.hasOption("ignore");
 		// Check for user-provided configuration
 		Properties usrCfg = new Properties();
 		if (cmd.hasOption("c")) {
 			String file = cmd.getOptionValue("c");
+			log.info("Loading configuration file '%s'...", file);
 			usrCfg.loadFromXML(new FileInputStream(file));
+			log.info("Successfully loaded file.");
 		}
 		// Read in built-in script engine configuration
 		Properties defCfg = new Properties();
@@ -93,7 +112,9 @@ public class App {
 		if (cmd.hasOption("e")) {
 			String line = cmd.getOptionValue("e");
 			line = line.trim();
+			log.info("Executing '%s'...", line);
 			engine.eval(line);
+			log.info("Line has been executed.");
 			return;
 		}
 		// Common stuff for files and folders
@@ -104,7 +125,9 @@ public class App {
 		if (cmd.hasOption("d")) {
 			String path = cmd.getOptionValue("d");
 			dir = new File(path);
+			log.info("Executing directory '%s'...", dir);
 			files = dir.listFiles();
+			log.info("Directory contains %s files.", files.length);
 		}
 		// Check if file's execution is wanted
 		if (cmd.hasOption("f")) {
@@ -121,8 +144,10 @@ public class App {
 			FileListener listener = createListener(throwError, defCfg, usrCfg,
 					singleFile, engine);
 			FolderWatcher watcher = new FolderWatcher(dir, ms, listener);
+			log.info("Created a watcher for folder '%s'...", dir);
 			System.in.read();
 			watcher.close();
+			log.info("Watcher exited.");
 			return;
 		}
 		// Execute scripts
@@ -131,9 +156,11 @@ public class App {
 				try {
 					executeFile(engine, oneFile, defCfg, usrCfg);
 				} catch (UnsupportedOperationException uoe) {
+					log.info("Error in file '%s' => %s", oneFile, uoe);
 					// Ignore more than one error, 'cause it'll be a directory
-					if (files.length == 1)
-						throw uoe;
+					if (ignoreError)
+						continue;
+					throw uoe;
 				}
 			return;
 		}
@@ -148,16 +175,20 @@ public class App {
 			String lang = IOHelper.last(file.getName().split("\\."));
 			engine = getEngine(lang, defCfg, usrCfg);
 		}
+		log.info("Executing file '%s'...", file);
 		engine.eval(new FileReader(file));
+		log.info("File has been executed.");
 	}
 
 	private ScriptEngine getEngine(String lang, Properties defCfg,
 			Properties usrCfg) {
+		log.info("Searching for a '%s' engine...", lang);
 		String artf = usrCfg.getProperty(lang);
 		if (artf == null)
 			artf = defCfg.getProperty(lang);
 		if (artf != null) {
 			IRuntime rt = Runtime.getInstance();
+			rt.setLogger(log);
 			rt.require(artf);
 		}
 		ScriptEngineManager mgr = new ScriptEngineManager();
@@ -165,6 +196,9 @@ public class App {
 		if (engine == null)
 			throw new UnsupportedOperationException(
 					"Couldn't find an engine for '" + lang + "'!");
+		ScriptEngineFactory f = engine.getFactory();
+		log.info("Engine is '%s' '%s'.", f.getEngineName(),
+				f.getEngineVersion());
 		return engine;
 	}
 
