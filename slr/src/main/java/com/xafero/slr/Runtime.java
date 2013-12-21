@@ -1,6 +1,7 @@
 package com.xafero.slr;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +58,13 @@ public class Runtime implements IRuntime {
 			File file = new File(folder, fileName);
 			// If file not already exists, download file
 			if (!file.exists() || !file.canRead()) {
-				InputStream input = url.openStream();
+				InputStream input;
+				// File protocol, so read it directly
+				if (url.getProtocol().equalsIgnoreCase("file"))
+					input = new FileInputStream(new File(url.getPath()));
+				else
+					// It's on the web
+					input = url.openStream();
 				FileOutputStream output = new FileOutputStream(file);
 				IOHelper.copy(input, output);
 			}
