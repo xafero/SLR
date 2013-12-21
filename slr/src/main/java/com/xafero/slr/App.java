@@ -249,9 +249,6 @@ public class App {
 					Throwable e = re.getCause() == null ? re : re.getCause();
 					String msg = e.getMessage() == null ? e.toString() : e
 							.getMessage();
-
-					re.printStackTrace();
-
 					log.info("Runtime error in '%s' => %s", file.getName(), msg);
 					if (!throwError)
 						return;
