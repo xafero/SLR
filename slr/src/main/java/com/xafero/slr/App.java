@@ -209,6 +209,7 @@ public class App {
 		// Create bindings to insert hooks and such
 		Bindings bnd = engine.createBindings();
 		bnd.put("hook", hook);
+		bnd.put("rt", rt);
 		// Execute it!
 		engine.eval(new FileReader(file), bnd);
 		log.info("File has been executed.");
