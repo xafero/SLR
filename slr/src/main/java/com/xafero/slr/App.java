@@ -5,8 +5,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -19,10 +22,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 
+import com.xafero.slr.api.IHook;
 import com.xafero.slr.api.ILogger;
 import com.xafero.slr.api.IRuntime;
 import com.xafero.slr.impl.ConsoleLogger;
 import com.xafero.slr.impl.NullLogger;
+import com.xafero.slr.impl.SimpleHook;
 import com.xafero.slr.util.FolderWatcher;
 import com.xafero.slr.util.FolderWatcher.FileChange;
 import com.xafero.slr.util.FolderWatcher.FileListener;
@@ -39,6 +44,15 @@ public class App {
 	private ILogger log;
 	private boolean ignoreError;
 
+	private final IRuntime rt;
+	private final Map<String, IHook> hooks;
+
+	public App() {
+		rt = Runtime.getInstance();
+		hooks = new HashMap<String, IHook>();
+	}
+
+	@SuppressWarnings("static-access")
 	public void run(String... args) throws Exception {
 		// Create options
 		Options options = new Options();
@@ -89,6 +103,7 @@ public class App {
 			log = new ConsoleLogger();
 		else
 			log = new NullLogger();
+		rt.setLogger(log);
 		ignoreError = cmd.hasOption("ignore");
 		// Check for user-provided configuration
 		Properties usrCfg = new Properties();
@@ -157,7 +172,7 @@ public class App {
 					executeFile(engine, oneFile, defCfg, usrCfg);
 				} catch (UnsupportedOperationException uoe) {
 					log.info("Error in file '%s' => %s", oneFile, uoe);
-					// Ignore more than one error, 'cause it'll be a directory
+					// Ignore only if explicitly said so
 					if (ignoreError)
 						continue;
 					throw uoe;
@@ -176,7 +191,26 @@ public class App {
 			engine = getEngine(lang, defCfg, usrCfg);
 		}
 		log.info("Executing file '%s'...", file);
-		engine.eval(new FileReader(file));
+		// Determine hook key
+		String hookKey = file.getAbsolutePath();
+		// Check for existing hook
+		IHook hook;
+		if (hooks.containsKey(hookKey)) {
+			// Case 1: There's already a hook
+			hook = hooks.get(hookKey);
+			if (hook.getOnShutdown() != null) {
+				log.info("Shutdown hook called...");
+				hook.getOnShutdown().run();
+			}
+		} else {
+			// Case 2: No previous hook
+			hooks.put(hookKey, hook = new SimpleHook());
+		}
+		// Create bindings to insert hooks and such
+		Bindings bnd = engine.createBindings();
+		bnd.put("hook", hook);
+		// Execute it!
+		engine.eval(new FileReader(file), bnd);
 		log.info("File has been executed.");
 	}
 
@@ -186,11 +220,8 @@ public class App {
 		String artf = usrCfg.getProperty(lang);
 		if (artf == null)
 			artf = defCfg.getProperty(lang);
-		if (artf != null) {
-			IRuntime rt = Runtime.getInstance();
-			rt.setLogger(log);
+		if (artf != null)
 			rt.require(artf);
-		}
 		ScriptEngineManager mgr = new ScriptEngineManager();
 		ScriptEngine engine = mgr.getEngineByExtension(lang);
 		if (engine == null)
@@ -207,18 +238,27 @@ public class App {
 			final String singleFile, final ScriptEngine engine) {
 		return new FileListener() {
 			public void fileChanged(FolderWatcher watcher, FileChange event) {
+				File file = new File(event.Key);
 				try {
-					File file = new File(event.Key);
 					if (singleFile != null
 							&& !singleFile.equalsIgnoreCase(file
 									.getAbsolutePath()))
 						return;
 					executeFile(engine, file, defCfg, usrCfg);
 				} catch (RuntimeException re) {
+					Throwable e = re.getCause() == null ? re : re.getCause();
+					String msg = e.getMessage() == null ? e.toString() : e
+							.getMessage();
+
+					re.printStackTrace();
+
+					log.info("Runtime error in '%s' => %s", file.getName(), msg);
 					if (!throwError)
 						return;
 					throw re;
 				} catch (Exception e) {
+					log.info("Error in '%s' => %s", file.getName(),
+							e.getMessage());
 					if (!throwError)
 						return;
 					throw new RuntimeException(e);
